@@ -6,6 +6,10 @@
       </div>
       <div class="right-operation-container">
         <div class="component-op">
+          <div class="item" @click="demoEvent()">
+            <filter2-icon />
+            <span>{{ $t('pages.setting.editSource.sift.demo') }}</span>
+          </div>
           <div class="item" @click="siftEvent('Source')">
             <extension-icon />
             <span>{{ $t('pages.setting.editSource.sift.source') }}</span>
@@ -29,6 +33,7 @@
                     <t-button class="button" theme="default" @click="getSource()">{{
                       $t('pages.setting.editSource.sift.action.source') }}</t-button>
                   </template>
+
                   <div class="input-container">
                     <t-input v-model="form.req.url" :placeholder="$t('pages.setting.placeholder.general')"
                       class="input" />
@@ -63,26 +68,39 @@
               </div>
             </div>
             <div class="code-op-item card">
+              <t-input v-model="form.class_name" :label="$t('pages.setting.editSource.sift.rule.className')"
+                :placeholder="$t('pages.setting.editSource.sift.placeholder.classNameTip')" class="input w-100%" />
+              <t-input v-model="form.class_url" :label="$t('pages.setting.editSource.sift.rule.classUrl')"
+                :placeholder="$t('pages.setting.editSource.sift.placeholder.classUrlTip')" class="input w-100%" />
               <t-input v-model="form.class_parse" :label="$t('pages.setting.editSource.sift.rule.class')"
                 :placeholder="$t('pages.setting.editSource.sift.placeholder.classParseTip')" class="input w-100%" />
               <t-input v-model="form.cate_exclude" :label="$t('pages.setting.editSource.sift.rule.cateExclude')"
                 :placeholder="$t('pages.setting.editSource.sift.placeholder.cateExcludeTip')" class="input w-100%" />
               <t-input v-model="form.reurl" :label="$t('pages.setting.editSource.sift.rule.link')"
                 :placeholder="$t('pages.setting.editSource.sift.placeholder.linkTip')" class="input w-100%" />
-              <t-button block @click="actionClass">{{ $t('pages.setting.editSource.sift.rule.try') }}</t-button>
+              <t-button block @click="actionClass">{{ $t('pages.setting.editSource.sift.rule.ctry') }}</t-button>
             </div>
             <div class="code-op-item card">
-              <t-button block @click="batchResults">{{ $t('pages.setting.editSource.sift.rule.br') }}</t-button>
+              <t-button block :loading="isVisible.batchFetchLoading" @click="batchResults">{{
+                $t('pages.setting.editSource.sift.rule.br') }}</t-button>
             </div>
             <div class="code-op-item card">
-              <t-input v-model="form.filter" :label="$t('pages.setting.editSource.sift.rule.filter')"
-                :placeholder="$t('pages.setting.editSource.sift.placeholder.filterTip')" class="input w-100%" />
-              <t-input v-model="form.filterInfo" :label="$t('pages.setting.editSource.sift.rule.filterInfo')"
-                :placeholder="$t('pages.setting.editSource.sift.placeholder.filterInfoTip')" class="input w-100%" />
+              <t-textarea v-model="form.filter" :label="$t('pages.setting.editSource.sift.rule.filter')"
+                :placeholder="$t('pages.setting.editSource.sift.placeholder.filterTip')" class="input w-100%"
+                :autosize="{ minRows: 1 }" />
+              <t-textarea t v-model="form.filterInfo" :label="$t('pages.setting.editSource.sift.rule.filterInfo')"
+                :placeholder="$t('pages.setting.editSource.sift.placeholder.filterInfoTip')" class="input w-100%"
+                :autosize="{ minRows: 1 }" />
+              <t-button block @click="getMatchs">{{ $t('pages.setting.editSource.sift.rule.ms') }}</t-button>
+
               <t-input v-model="form.exclude_keys" :label="$t('pages.setting.editSource.sift.rule.excludeKeys')"
                 :placeholder="$t('pages.setting.placeholder.splitForVerticalLine')" class="input w-100%" />
 
-              <t-input v-model="form.matchs.plot" :label="$t('pages.setting.editSource.sift.rule.plot')"
+              <!-- 动态创建的输入框列表 -->
+              <t-input v-for="(_, key, index) in form.matchs" v-model="form.matchs[key]" :label="key" :key="index"
+                :placeholder="$t('pages.setting.editSource.sift.rule.reg')" class="input w-100%" />
+
+              <!-- <t-input v-model="form.matchs.plot" :label="$t('pages.setting.editSource.sift.rule.plot')"
                 :placeholder="$t('pages.setting.editSource.sift.rule.reg')" class="input w-100%" />
               <t-input v-model="form.matchs.area" :label="$t('pages.setting.editSource.sift.rule.area')"
                 :placeholder="$t('pages.setting.editSource.sift.rule.reg')" class="input w-100%" />
@@ -93,9 +111,9 @@
               <t-input v-model="form.matchs.letter" :label="$t('pages.setting.editSource.sift.rule.letter')"
                 :placeholder="$t('pages.setting.editSource.sift.rule.reg')" class="input w-100%" />
               <t-input v-model="form.matchs.sort" :label="$t('pages.setting.editSource.sift.rule.sort')"
-                :placeholder="$t('pages.setting.editSource.sift.rule.reg')" class="input w-100%" />
+                :placeholder="$t('pages.setting.editSource.sift.rule.reg')" class="input w-100%" /> -->
 
-              <t-button block @click="actionFilter">{{ $t('pages.setting.editSource.sift.rule.try') }}</t-button>
+              <t-button block @click="actionFilter">{{ $t('pages.setting.editSource.sift.rule.tf') }}</t-button>
             </div>
           </div>
         </div>
@@ -137,7 +155,7 @@ import jsBeautify from 'js-beautify';
 import JSON5 from "json5";
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue';
 import { MessagePlugin } from 'tdesign-vue-next';
-import { ExtensionIcon, TransformIcon } from 'tdesign-icons-vue-next';
+import { ExtensionIcon, Filter2Icon, TransformIcon } from 'tdesign-icons-vue-next';
 import jsonWorker from 'monaco-editor/esm/vs/language/json/json.worker?worker';
 import htmlWorker from 'monaco-editor/esm/vs/language/html/html.worker?worker';
 import tsWorker from 'monaco-editor/esm/vs/language/typescript/ts.worker?worker';
@@ -147,9 +165,6 @@ import { t } from '@/locales';
 import { useSettingStore } from '@/store';
 import { getHtml, copyToClipboardApi, encodeGzip, encodeBtoa } from '@/utils/tool';
 import { getFilters, processCategories } from '@/utils/drpy/lab/hipyFilter';
-import axios from 'axios';
-import { json } from 'node:stream/consumers';
-
 
 const storeSetting = useSettingStore();
 
@@ -160,20 +175,12 @@ const systemTheme = computed(() => {
 let form = ref({
   codeType: 'html',
   content: {
-    edit: '',
     log: '',
     text: '',
     debug: '',
     source: '',
     rule: ''
   },
-  rule: {
-    type: '',
-    pdfa: '',
-    pdfh: ''
-  },
-  template: 'mxpro',
-  url: '',
   nav: 'debug',
   action: '',
   req: {
@@ -181,7 +188,7 @@ let form = ref({
     encode: 'UTF-8',
     header: '',
     body: '',
-    url: 'https://hapihd.com/index.php/vod/show/id/dianying.html',
+    url: '',
     contentType: 'application/json'
   },
   clickType: {
@@ -190,29 +197,27 @@ let form = ref({
     source: ''
   },
   class_parse: '',
+  class_name: '',
+  class_url: '',
   cate_exclude: '首页|留言|APP|下载|资讯|新闻|动态',
   reurl: '',
   filter: '',
   filterInfo: '',
   exclude_keys: '',
+  classResult: {},
   matchs: {
-    plot: 'show(.*?)/id',
-    area: 'show(.*?)/id',
-    lang: '(/lang.*?)\.html@@',
-    year: '(/year.*?)\.html@@',
-    letter: '(/letter.*?)\.html@@',
-    sort: '(/by.*?)/id'
-  }
+    // plot: 'show(.*?)/id',
+    // area: 'show(.*?)/id',
+    // lang: '(/lang.*?)\.html@@',
+    // year: '(/year.*?)\.html@@',
+    // letter: '(/letter.*?)\.html@@',
+    // sort: '(/by.*?)/id'
+  },
 });
 
 const isVisible = reactive({
-  template: false,
-  player: false,
-  help: false,
   reqParam: false,
-  snifferParam: false,
-  ai: false,
-  tool: false
+  batchFetchLoading: false
 });
 
 watch(
@@ -345,7 +350,7 @@ const initEditor = () => {
     log.onDidChangeModelContent(() => {
       if (log) form.value.content.text = log.getValue();
     });
-    // After onDidChangeModelContent
+
     log.getModel()!.pushEOL(config.eol);
   });
 };
@@ -360,6 +365,23 @@ onBeforeUnmount(() => {
 
 const siftEvent = (key) => {
   emit('changeComponent', key);
+};
+
+const demoEvent = () => {
+  form.value.req.url = "https://hapihd.com/index.php/vod/show/id/dianying.html";
+  form.value.class_parse = String.raw`.navbar-items li;a&&Text;a&&href;/(\w+).html`;
+  form.value.reurl = "https://hapihd.com/index.php/vod/show/id/fyclass.html";
+  form.value.cate_exclude = "更新|热搜榜";
+  form.value.filter = "body&&.scroll-box";
+  form.value.filterInfo = ";.module-item-title&&Text;body&&a;a&&Text;a&&href";
+  form.value.matchs = {
+    剧情: 'show(.*?)/id',
+    地区: 'show(.*?)/id',
+    语言: '(/lang.*?)\.html@@',
+    年份: '(/year.*?)\.html@@',
+    字母: '(/letter.*?)\.html@@',
+    排序: '(/by.*?)/id'
+  };
 };
 
 const changeNav = async (nav = '', action = '') => {
@@ -395,20 +417,96 @@ const changeNav = async (nav = '', action = '') => {
   }
 };
 
-const actionClass = () => {
-  const { class_parse = '', cate_exclude = '', reurl = '' } = form.value;
-  const { url } = form.value.req;
+const getMatchs = () => {
+  const { filterInfo = '', filter = '', exclude_keys = '', matchs = {} } = form.value;
   const contentHtml = form.value.content.source;
 
-  if (!class_parse) {
-    MessagePlugin.warning(t('pages.setting.editSource.sift.message.inputNoClassParse'));
+  if (!filterInfo || !filter) {
+    MessagePlugin.warning(t('pages.setting.editSource.sift.message.inputNoFilterAndFilterInfo'));
     return;
   };
+
   if (!contentHtml.trim()) {
     MessagePlugin.warning(t('pages.setting.editSource.sift.message.sourceFirst'));
     return;
+  };
+
+  try {
+    const response = getFilters(contentHtml, '', filter, filterInfo, {}, exclude_keys);
+    const updatedMatchs = response?.fl.reduce((acc, item) => {
+      if (!matchs.hasOwnProperty(item)) {
+        acc[item] = "";
+      } else acc[item] = matchs[item];
+      return acc;
+    }, {});
+
+    form.value.matchs = { ...updatedMatchs };
+  } catch (err) {
+    console.error('Error in getMatchs:', err);
   }
-  const response = processCategories(contentHtml, class_parse, cate_exclude, reurl, url);
+};
+
+const uniqueObjectsByProperty = (array, key) => {
+  const map = new Map();
+  array.forEach(item => {
+    const keyValue = item[key];
+    map.set(keyValue, item);
+  });
+  return Array.from(map.values());
+};
+
+const concatenateObjects = (array) => {
+  return array.reduce((accumulator, current) => {
+    accumulator.m = accumulator.m ? `${accumulator.m}&${current.m}` : current.m;
+    accumulator.title = accumulator.title ? `${accumulator.title}&${current.title}` : current.title;
+    return accumulator;
+  }, { m: '', title: '' });
+};
+
+const actionClass = () => {
+  const { class_parse = '', class_name = '', class_url = '', cate_exclude = '', reurl = '' } = form.value;
+  const { url } = form.value.req;
+  const contentHtml = form.value.content.source;
+
+  if (!class_parse && !class_name && !class_url) {
+    MessagePlugin.warning(t('pages.setting.editSource.sift.message.inputNoClassParse'));
+    return;
+  };
+
+  if (!contentHtml.trim()) {
+    MessagePlugin.warning(t('pages.setting.editSource.sift.message.sourceFirst'));
+    return;
+  };
+
+  let response = processCategories(contentHtml, class_parse, cate_exclude, reurl, url);
+  let set = new Set();
+  if (class_name && class_url) {
+    if (response.hasOwnProperty("m")) {
+      response.m += "&" + class_url;
+      response.title += "&" + class_name;
+    }
+  }
+
+  if (Object.keys(response).length > 0) {
+    response.m.split("&").map((x, i) => {
+      set.add({ m: x, title: response.title.split("&")[i] })
+    });
+
+    let rs = uniqueObjectsByProperty(Array.from(set), 'm');
+    if (cate_exclude.length > 0) {
+      let excludeCategories = cate_exclude.split(/\|/).filter(e => e);
+      rs = rs.filter(x => !excludeCategories.some(s => s.includes(x.title)));
+    };
+
+    response = concatenateObjects(rs);
+  }
+
+  if (Object.keys(response).length == 0) {
+    if (class_name && class_url) {
+      response.m = class_url;
+      response.title = class_name;
+    }
+  }
 
   const transformData = (data) => {
     const titles = data.title.split('&');
@@ -419,106 +517,116 @@ const actionClass = () => {
       id: ms[index].trim(),
       surl: form.value.reurl.replace("fyclass", ms[index].trim())
     }));
-  }
+  };
+
   if (response?.title && response?.m) form.value.content.debug = transformData(response);
+  form.value.class_name = response?.title || '';
+  form.value.class_url = response?.m || '';
+  form.value.classResult = transformData(response);
   changeNav('debug', 'class');
 };
 
+const batchResults = async () => {
+  const classResult = form.value.classResult;
 
-const batchResults = () => {
-  let r = form.value.content.debug;
-  //console.log(r);
-  const { filterInfo = '', filter = '', matchs } = form.value;
-  if (!(filterInfo && filter)) {
+  const { filterInfo = '', filter = '', exclude_keys = '', matchs = {} } = form.value;
+  if (!filterInfo || !filter) {
     MessagePlugin.warning(t('pages.setting.editSource.sift.message.inputNoFilterAndFilterInfo'));
     return;
   };
-  // 调用batchFetch并处理结果
-  batchFetch(r)
-    .then(results => {
-      let rs = {};
-      results.map(item => {
-        const newMatchs = {
-          '剧情': matchs.plot,
-          '地区': matchs.area,
-          '语言': matchs.lang,
-          '年份': matchs.year,
-          '字母': matchs.letter,
-          '排序': matchs.sort,
-        }
-        const response: any = getFilters(item.body, item.id, filter, filterInfo, newMatchs, '').filters;
-        //console.log(response)
-        if (response) {
-          rs[item.id] = response;
-        }
-      })
-      console.log(rs);
-      form.value.content.debug = JSON.stringify(rs, null, 2);
-      changeNav('debug', 'class');
-    })
-    .catch(error => {
-      console.error('Failed to fetch data:', error);
-    });
+
+  if (Object.keys(classResult).length == 0) {
+    MessagePlugin.warning(t('pages.setting.editSource.sift.message.classResultisEmpty'));
+    return;
+  };
+
+  try {
+    isVisible.batchFetchLoading = true;
+
+    const results = await batchFetch(classResult);
+    const rs = results.reduce((accumulator, item) => {
+      const response = getFilters(item.body, item.id, filter, filterInfo, matchs, exclude_keys);
+      if (response && response.filters) {
+        accumulator[item.id] = response.filters;
+      }
+      return accumulator;
+    }, {});
+
+    form.value.content.debug = JSON.stringify(rs, null, 2);
+
+    changeNav('debug', 'class');
+  } catch (err) {
+    console.log(`[editSource][sift][batchResults][err]${err}`)
+    MessagePlugin.error(`${t('pages.setting.data.fail')}`);
+  } finally {
+    isVisible.batchFetchLoading = false;
+  };
 };
 
-
-
-
 const batchFetch = async (obj) => {
-  const promises = obj.map(x => {
-    return axios.get(x.surl);
-  });
+  const { method, encode, header, body, contentType } = form.value.req;
+
   try {
-    // 等待所有请求完成
+    const { parsedHeader, parsedBody } = prepareRequestOptions(method, header, body, contentType);
+    const promises = obj.map(x => getHtml(x.surl.trim(), method, encode, parsedHeader, parsedBody));
     const responses = await Promise.all(promises);
-    // 所有请求都成功后，提取结果数据并关联id
-    const results = responses.map((response, index) => {
-      console.log(index)
-      const { id } = obj[index]; // 获取对应的id
-      return {
-        id: id,
-        body: response.data // 假设响应体的数据在response.data中
-      };
-    });
-    return results; // 返回结果数组
+    const results = responses.map((response, index) => ({
+      id: obj[index].id,
+      body: response
+    }));
+    return results;
   } catch (error) {
-    // 如果有任何一个请求失败，则捕捉错误
-    console.error('There was an error with one of the requests:', error);
-    throw error; // 抛出错误，以便调用者可以处理
+    console.error('Error in batch fetch:', error);
+    throw error;
   }
 };
 
 const actionFilter = () => {
-  console.log(form.value)
-  const { filterInfo = '', filter = '', matchs } = form.value;
+  const { filterInfo = '', filter = '', exclude_keys = '', matchs = {} } = form.value;
   const contentHtml = form.value.content.source;
-  if (!(filterInfo && filter)) {
+
+  if (!filterInfo || !filter) {
     MessagePlugin.warning(t('pages.setting.editSource.sift.message.inputNoFilterAndFilterInfo'));
     return;
   };
+
   if (!contentHtml.trim()) {
     MessagePlugin.warning(t('pages.setting.editSource.sift.message.sourceFirst'));
     return;
-  }
-  const newMatchs = {
-    '剧情': matchs.plot,
-    '地区': matchs.area,
-    '语言': matchs.lang,
-    '年份': matchs.year,
-    '字母': matchs.letter,
-    '排序': matchs.sort,
-  }
+  };
 
-  const response: any = getFilters(contentHtml, 'zongyi', filter, filterInfo, newMatchs, '').filters;
+  const response = getFilters(contentHtml, '', filter, filterInfo, matchs, exclude_keys).filters;
 
   form.value.content.debug = response;
   changeNav('debug', 'filter');
 };
 
+const prepareRequestOptions = (method, header, body, contentType) => {
+  const parsedHeader = JSON5.parse(header || '{}');
+  let parsedBody = JSON5.parse(body || '{}');
+
+  if (method !== 'GET' && parsedBody) {
+    parsedHeader['Content-Type'] = contentType;
+    if (contentType === 'application/x-www-form-urlencoded') {
+      parsedBody instanceof URLSearchParams
+        ? parsedBody
+        : (parsedBody = new URLSearchParams(parsedBody));
+    }
+  }
+
+  const parseHeaderKeys = Object.fromEntries(
+    Object.entries(parsedHeader).map(([key, value]) => [key.toLowerCase(), value])
+  );
+
+  if (!parseHeaderKeys.accept) {
+    parseHeaderKeys['accept'] = '*/*';
+  }
+
+  return { parsedHeader, parsedBody };
+};
+
 const getSource = async () => {
-  let { url, method, encode, header, body, contentType } = form.value.req;
-  header = header ? header : '{}';
-  body = body ? body : '{}';
+  const { url, method, encode, header, body, contentType } = form.value.req;
 
   if (!url) {
     MessagePlugin.warning(t('pages.setting.editSource.message.htmlNoUrl'));
@@ -526,25 +634,8 @@ const getSource = async () => {
   };
 
   try {
-    const parsedHeader = JSON5.parse(header);
-    let parsedBody = JSON5.parse(body);
-
-    if (method !== 'GET' && parsedBody) {
-      parsedHeader['Content-Type'] = contentType;
-      if (contentType === 'application/x-www-form-urlencoded') {
-        parsedBody instanceof URLSearchParams
-          ? parsedBody
-          : (parsedBody = new URLSearchParams(parsedBody));
-      }
-    }
-    let parseHeaderKeys: string[];
-    parseHeaderKeys = Object.keys(parsedHeader).map(it => it.toLowerCase());
-    if (!parseHeaderKeys.includes('accept')) {
-      parsedHeader['accept'] = '*/*';
-    }
-
+    const { parsedHeader, parsedBody } = prepareRequestOptions(method, header, body, contentType);
     const response = await getHtml(url, method, encode, parsedHeader, parsedBody);
-
     form.value.content.source = response;
     changeNav('source', 'html');
     MessagePlugin.success(`${t('pages.setting.data.success')}`);
@@ -589,7 +680,6 @@ const debugEvent = async () => {
   };
 };
 
-
 const sourceEvent = () => {
   try {
     const type = form.value.clickType.source;
@@ -605,7 +695,7 @@ const sourceEvent = () => {
 
     MessagePlugin.info(`${t('pages.setting.data.success')}`);
   } catch (err) {
-    console.log(`[editSource][sift][sourceEvent][err]${err}`)
+    console.log(`[editSource][sift][sourceEvent][err]${err}`);
     MessagePlugin.error(`${t('pages.setting.data.fail')}`);
 
   } finally {
